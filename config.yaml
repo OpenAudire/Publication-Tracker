@@ -1,0 +1,181 @@
+# Publication tracker configuration.
+# Everything institution- or field-specific lives here, so the same code can
+# track another institution (change `institution`) or another field (change `lens`).
+
+institution:
+  name: University of Cape Town
+  short_name: UCT
+  ror: https://ror.org/03p74gp79
+  # A paper must show UCT either through the ROR-matched institution or through
+  # a raw affiliation string matching this regex ("mentions UCT").
+  # Also matches Web of Science style abbreviations ("Univ Cape Town").
+  # A bare "UCT" is ambiguous (e.g. Universidad Catolica de Temuco), so it only
+  # counts when the same string also mentions Cape Town / South Africa.
+  affiliation_regex: "(univ(ersity|\\.)?\\s+(of\\s+)?cape\\s+town|universiteit van kaapstad|(?=.*(?:cape town|south africa|rondebosch|western cape)).*\\buct\\b)"
+
+harvest:
+  from_year: 2006                 # 20 years back from 2026
+  include_types: [article, review, letter, editorial, book-chapter, book, preprint]
+  # Second query that catches records OpenAlex did not link to the UCT ROR.
+  # NOTE: confirm this filter name against the current OpenAlex docs; if the API
+  # rejects it, the harvester logs a warning and carries on with the ROR query.
+  raw_affiliation_filter: "raw_affiliation_strings.search"
+  raw_affiliation_phrases: ["University of Cape Town"]
+  per_page: 100
+
+# Scope: which UCT papers belong in the tracker.
+# A paper is in scope if it is FHS  OR  HPE (HPE papers by UCT authors count
+# even when the author's unit is outside the Faculty).
+fhs:
+  # any              = FHS affiliation text OR a Health Sciences primary topic
+  # affiliation_only = FHS affiliation text only (stricter, misses unit-less strings)
+  rule: any
+  health_topic_domains: ["Health Sciences"]
+  # Written over several lines for readability; the loader joins the lines
+  # (indentation and line breaks are dropped, spaces inside a line are kept).
+  affiliation_regex: |-
+    (faculty of health sciences|health sciences faculty|faculty of health science|
+    groote schuur|red cross war memorial|institute of infectious disease|
+    school of public health|school of public health and family medicine|
+    cape town lung institute|neuroscience institute|
+    department of (medicine|surgery|paediatrics|pediatrics|psychiatry|psychology and mental health|
+    obstetrics|anaesthesia|anesthesia|radiology|radiation|pathology|haematology|hematology|
+    neurology|neurosurgery|ophthalmology|human biology|biomedical|medical|public health|
+    family medicine|primary health|forensic|nursing|midwifery|physiotherapy|
+    occupational therapy|speech|audiology|health and rehabilitation|health sciences education|
+    clinical|molecular|chemical pathology|immunology|medical microbiology|
+    integrative biomedical|orthopaedic|orthopedic|urology|dermatology|emergency medicine|
+    paediatric|pediatric|child health|exercise science)|
+    division of (medicine|surgery|neurology|haematology|hematology|clinical|infectious|
+    nephrology|cardiology|dermatology|rheumatology|endocrin|gastroenterology|pulmonology|
+    paediatric|pediatric|emergency|orthopaedic|plastic|urology|otorhinolaryngology|
+    radiation|medical|health|biomedical|human genetics|chemical pathology|
+    clinical pharmacology|immunology|forensic|ophthalmology|anaesthesia|
+    obstetrics|gynaecology|neonatal|nursing|physiotherapy|occupational|speech|
+    perinatal|public health|epidemiology)|
+    health professions education|clinical research centre|wellcome centre|
+    fac\.? hlth sci|hlth sci fac|dept\.? (med|surg|paediat|pediat|psychiat|human biol|pathol|
+    radiol|anaesthesiol|anesthesiol|obstet|neurol|publ hlth|fam med|nursing|biomed|clin)\w*|
+    div\.? (med|surg|neurol|haematol|hematol|clin|infect|paediat|pediat)\w*|
+    sch\.? publ hlth)
+
+# The lens: Health Professions Education (HPE).
+lens:
+  name: Health Professions Education
+  # Journals whose scope is HPE. A paper in one of these counts as HPE.
+  core_journals:
+    - Medical Education
+    - Academic Medicine
+    - Medical Teacher
+    - BMC Medical Education
+    - Advances in Health Sciences Education
+    - Perspectives on Medical Education
+    - African Journal of Health Professions Education
+    - Teaching and Learning in Medicine
+    - Journal of Surgical Education
+    - Medical Education Online
+    - The Clinical Teacher
+    - Education for Health
+    - Journal of Interprofessional Care
+    - Nurse Education Today
+    - Nurse Education in Practice
+    - Simulation in Healthcare
+    - Advances in Simulation
+    - Health Professions Education
+    - Journal of Medical Education and Curricular Development
+    - Anatomical Sciences Education
+    - Journal of Dental Education
+    - European Journal of Dental Education
+    - Medical Science Educator
+    - International Journal of Medical Education
+    - Journal of Graduate Medical Education
+    - Journal of Continuing Education in the Health Professions
+    - Journal of Educational Evaluation for Health Professions
+    - Journal of Veterinary Medical Education
+    - Physiotherapy Theory and Practice Education
+    - Journal of Allied Health
+  # A strong term in the TITLE makes a paper HPE.
+  # A strong term in the abstract only, or three distinct weak terms, makes it a
+  # *candidate* that goes to data/review_queue.csv for a human decision.
+  strong_terms:
+    - "medical education"
+    - "health professions? education"
+    - "health sciences? education"
+    - "health professional education"
+    - "nursing education"
+    - "dental education"
+    - "pharmacy education"
+    - "physiotherapy education"
+    - "occupational therapy education"
+    - "interprofessional education"
+    - "inter-?professional (learning|collaboration education)"
+    - "medical (students?|school|curricul\\w+|undergraduates?|trainees?|graduates?)"
+    - "undergraduate (medical|health|nursing)"
+    - "postgraduate (medical|training)"
+    - "health professions? (students?|educators?|training|curricul\\w+)"
+    - "clinical (teaching|education|training|supervision|learning|reasoning)"
+    - "competency-?based"
+    - "\\bOSCE\\b"
+    - "faculty development"
+    - "simulation-?based (education|training|learning)"
+    - "(registrar|resident|intern|junior doctor)s? training"
+    - "community-?based (education|learning)"
+    - "service-?learning"
+    - "social accountability"
+    - "curriculum (transformation|reform|renewal|design|development|mapping|review)"
+    - "decoloni[sz]\\w*"
+    - "student selection"
+    - "admissions? (policy|process|criteria)"
+  weak_terms:
+    - "curricul\\w+"
+    - "students?"
+    - "teaching"
+    - "learning"
+    - "assessment"
+    - "educat\\w+"
+    - "pedagog\\w+"
+    - "competenc\\w+"
+    - "simulation"
+    - "supervis\\w+"
+    - "clerkship"
+    - "registrars?"
+    - "residents?"
+    - "lecturers?"
+    - "tutors?"
+    - "faculty"
+  # Sub-themes for the Curriculum Transformation team. Applied only to papers
+  # already counted as HPE, so each theme sits inside health professions education.
+  themes:
+    Decolonisation and transformation: "(decoloni[sz]\\w*|transformation|racis\\w+|social justice|equity|inclusi\\w+|indigenous|african epistem\\w+)"
+    Community-based and service learning: "(community-?based|service-?learning|rural|primary health care|underserved|community engagement)"
+    Assessment and feedback: "(assessment|examination|OSCE|feedback|evaluat\\w+|portfolio|competenc\\w+)"
+    Interprofessional education: "(inter-?professional|inter-?disciplinary|team-?based|collaborative practice)"
+    Social accountability: "(social accountability|social responsib\\w+|health systems? (strengthening|needs)|primary care)"
+    Curriculum design and mapping: "(curricul\\w+|learning outcomes|programme design|program design|constructive alignment)"
+    Simulation and clinical skills: "(simulat\\w+|skills lab\\w*|clinical skills|manikin|virtual patient)"
+    Clinical teaching and supervision: "(clinical (teaching|supervision|placement|learning|reasoning)|bedside teaching|clerkship|mentor\\w+|preceptor\\w+)"
+    Digital and online learning: "(e-?learning|online|blended|digital|mobile learning|covid|remote teaching|emergency remote)"
+    Student selection and success: "(admission\\w*|selection|widening access|throughput|retention|student success|attrition|academic support)"
+    Student and staff wellbeing: "(well-?being|burnout|stress|resilience|mental health|distress)"
+    Faculty development: "(faculty development|staff development|educator development|teaching excellence|train-?the-?trainer)"
+
+external:
+  # Optional Scopus / Web of Science exports (CSV). Only the DOI and an "indexed
+  # in" flag are used; titles, citations and abstracts always come from OpenAlex,
+  # so licensed metadata is never republished.
+  - name: scopus
+    path: data/external/scopus.csv
+    doi_column: DOI
+    affiliation_column: Affiliations
+  - name: wos
+    path: data/external/wos.csv
+    doi_column: DOI
+    affiliation_column: Addresses
+
+outputs:
+  works_json: docs/data/works.json
+  meta_json: docs/data/meta.json
+  history_csv: data/history.csv
+  review_queue_csv: data/review_queue.csv
+  unresolved_csv: data/unresolved_external.csv
+  overrides_csv: data/overrides.csv   # manual decisions: doi,hpe  (yes|no)

@@ -1,0 +1,65 @@
+"""Decide whether a record is FHS and/or HPE, and which themes it carries."""
+from __future__ import annotations
+
+import csv
+from pathlib import Path
+
+from .config import normalize_doi, normalize_journal
+
+
+def load_overrides(path: Path) -> dict[str, bool]:
+    """data/overrides.csv: doi,hpe  with hpe = yes|no (manual decisions win)."""
+    out: dict[str, bool] = {}
+    if not path.exists():
+        return out
+    with path.open(encoding="utf-8-sig", newline="") as fh:
+        for row in csv.DictReader(fh):
+            doi = normalize_doi(row.get("doi"))
+            val = (row.get("hpe") or "").strip().lower()
+            if doi and val in ("yes", "no"):
+                out[doi] = val == "yes"
+    return out
+
+
+def tag_fhs(rec: dict, cfg: dict) -> None:
+    topic_hit = rec["domain"] in cfg["fhs"]["health_topic_domains"]
+    use_topic = cfg["fhs"]["rule"] == "any"
+    rec["fhs"] = bool(rec["fhs_aff"] or (use_topic and topic_hit))
+    if rec["fhs_aff"]:
+        rec["fhs_basis"] = "affiliation"
+    elif rec["fhs"]:
+        rec["fhs_basis"] = "topic"
+    else:
+        rec["fhs_basis"] = ""
+
+
+def tag_hpe(rec: dict, cfg: dict, overrides: dict[str, bool]) -> None:
+    lens = cfg["lens"]
+    title = rec["title"]
+    text = f"{title} {rec.get('_abstract', '')}"
+
+    if rec["doi"] in overrides:
+        status = "manual_yes" if overrides[rec["doi"]] else "manual_no"
+    elif normalize_journal(rec["journal"]) in lens["_core"]:
+        status = "core_journal"
+    elif lens["_strong"].search(title):
+        status = "title_keyword"
+    elif lens["_strong"].search(rec.get("_abstract", "")) or \
+            sum(1 for rx in lens["_weak"] if rx.search(text)) >= 3:
+        status = "candidate"
+    else:
+        status = "none"
+
+    rec["hpe_status"] = status
+    rec["hpe"] = status in ("core_journal", "title_keyword", "manual_yes")
+    rec["themes"] = (
+        [name for name, rx in lens["_themes"].items() if rx.search(text)]
+        if rec["hpe"] else []
+    )
+
+
+def tag(rec: dict, cfg: dict, overrides: dict[str, bool]) -> dict:
+    tag_fhs(rec, cfg)
+    tag_hpe(rec, cfg, overrides)
+    rec["in_scope"] = bool(rec["fhs"] or rec["hpe"])
+    return rec

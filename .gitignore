@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+mock_openalex.json
+# Licensed Scopus / Web of Science exports stay on your machine, not in the repo.
+data/external/*.csv
