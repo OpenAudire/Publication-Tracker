@@ -31,7 +31,7 @@ jobs:
 
       - name: Harvest, tag and build data files
         env:
-          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+  OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
         run: python -m tracker.run
 
       - name: Commit updated data
