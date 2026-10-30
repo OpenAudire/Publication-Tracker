@@ -34,10 +34,14 @@ class FilterRejected(OpenAlexError):
 
 def _get(session: requests.Session, params: dict, retries: int = 6) -> dict:
     key = os.environ.get("OPENALEX_API_KEY")
-    if key:
-        params = {**params, "api_key": key}
+    if not key:
+        raise OpenAlexError(
+            "OPENALEX_API_KEY is not set; refusing to call OpenAlex without a key"
+        )
+    headers = {"Authorization": f"Bearer {key}"}
     for attempt in range(retries):
-        resp = session.get(API, params=params, timeout=90)
+        resp = session.get(API, params=params, headers=headers, timeout=90)
+        ...  # rest of the function unchanged
         if resp.status_code == 200:
             return resp.json()
         if resp.status_code in (429, 500, 502, 503, 504):
