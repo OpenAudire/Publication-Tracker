@@ -27,9 +27,8 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Offline self-test
-      env:
+      env: 
        OPENALEX_API_KEY: dummy-for-offline-test
-     run: ...  # leave your existing command as is
         run: python -m tests.test_pipeline
 
       - name: Harvest, tag and build data files
