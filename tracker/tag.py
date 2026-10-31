@@ -25,16 +25,25 @@ SUPPLEMENT_TITLE = re.compile(
 
 
 def load_overrides(path: Path) -> dict[str, bool]:
-    """data/overrides.csv: doi,hpe  with hpe = yes|no (manual decisions win)."""
+    """data/overrides.csv: doi,openalex_id,hpe  with hpe = yes|no.
+
+    Manual decisions win over every automatic rule. A paper is matched by its
+    DOI, or by its OpenAlex id (W123...) when it has no DOI. Either column may
+    be left empty, and an old two-column file (doi,hpe) still works.
+    """
     out: dict[str, bool] = {}
     if not path.exists():
         return out
     with path.open(encoding="utf-8-sig", newline="") as fh:
         for row in csv.DictReader(fh):
-            doi = normalize_doi(row.get("doi"))
             val = (row.get("hpe") or "").strip().lower()
-            if doi and val in ("yes", "no"):
-                out[doi] = val == "yes"
+            if val not in ("yes", "no"):
+                continue
+            doi = normalize_doi(row.get("doi"))
+            oid = (row.get("openalex_id") or "").strip().lower()
+            for key in (doi, oid):
+                if key:
+                    out[key] = val == "yes"
     return out
 
 
@@ -55,8 +64,9 @@ def tag_hpe(rec: dict, cfg: dict, overrides: dict[str, bool]) -> None:
     title = rec["title"]
     text = f"{title} {rec.get('_abstract', '')}"
 
-    if rec["doi"] in overrides:
-        status = "manual_yes" if overrides[rec["doi"]] else "manual_no"
+    key = next((k for k in (rec["doi"], rec["id"].lower()) if k and k in overrides), None)
+    if key:
+        status = "manual_yes" if overrides[key] else "manual_no"
     elif normalize_journal(rec["journal"]) in lens["_core"]:
         status = "core_journal"
     elif lens["_strong"].search(title):
