@@ -2,9 +2,26 @@
 from __future__ import annotations
 
 import csv
+import re
 from pathlib import Path
 
 from .config import normalize_doi, normalize_journal
+
+# A title match on an HPE term (e.g. "decolonis*", "curriculum development",
+# "student selection") only counts as HPE if the paper also has a health
+# context: an FHS affiliation or health topic, or a health word in the title.
+# Without this, "Decolonising management education" would be counted.
+HEALTH_WORDS = re.compile(
+    r"\b(medic\w*|health\w*|clinic\w*|nurs\w*|patient\w*|dental|dentist\w*|pharmac\w*|"
+    r"physiotherap\w*|occupational therap\w*|surg\w*|doctor\w*|hospital\w*|midwi\w*|"
+    r"radiograph\w*|audiolog\w*|paediatric\w*|pediatric\w*|psychiatr\w*|registrars?|"
+    r"general practice|HIV)\b", re.I)
+
+# "Additional file 1 of <paper title>" records (supplementary files deposited
+# on Figshare) are not publications in their own right.
+SUPPLEMENT_TITLE = re.compile(
+    r"^\s*(additional|supplementary|supporting)\s+(file|data|material|information)s?"
+    r"\s*\d*\s+(of|for|to)\b", re.I)
 
 
 def load_overrides(path: Path) -> dict[str, bool]:
@@ -43,7 +60,8 @@ def tag_hpe(rec: dict, cfg: dict, overrides: dict[str, bool]) -> None:
     elif normalize_journal(rec["journal"]) in lens["_core"]:
         status = "core_journal"
     elif lens["_strong"].search(title):
-        status = "title_keyword"
+        has_health_context = rec["fhs"] or bool(HEALTH_WORDS.search(title))
+        status = "title_keyword" if has_health_context else "candidate"
     elif lens["_strong"].search(rec.get("_abstract", "")) or \
             sum(1 for rx in lens["_weak"] if rx.search(text)) >= 3:
         status = "candidate"
@@ -61,5 +79,5 @@ def tag_hpe(rec: dict, cfg: dict, overrides: dict[str, bool]) -> None:
 def tag(rec: dict, cfg: dict, overrides: dict[str, bool]) -> dict:
     tag_fhs(rec, cfg)
     tag_hpe(rec, cfg, overrides)
-    rec["in_scope"] = bool(rec["fhs"] or rec["hpe"])
+    rec["in_scope"] = bool(rec["fhs"] or rec["hpe"]) and not SUPPLEMENT_TITLE.match(rec["title"])
     return rec
