@@ -32,21 +32,33 @@ class FilterRejected(OpenAlexError):
     """The API answered 400 - usually an unknown filter name."""
 
 
-def _get(session: requests.Session, params: dict, retries: int = 6) -> dict:
+def _get(session: requests.Session, params: dict, retries: int = 8) -> dict:
     key = os.environ.get("OPENALEX_API_KEY")
     if not key:
         raise OpenAlexError(
             "OPENALEX_API_KEY is not set; refusing to call OpenAlex without a key"
         )
-    headers = {"Authorization": f"Bearer {key}"}
+    # The key goes in the query string, as the OpenAlex docs describe. GitHub
+    # Actions hides secret values in its logs, and the code below never prints
+    # the request URL.
+    params = {**params, "api_key": key}
     for attempt in range(retries):
-        resp = session.get(API, params=params, headers=headers, timeout=90)
-        ...  # rest of the function unchanged
-        if resp.status_code == 200:
-            return resp.json()
+        wait = min(2 ** attempt, 60)
+        try:
+            resp = session.get(API, params=params, timeout=(15, 180))
+            if resp.status_code == 200:
+                return resp.json()
+        except (requests.exceptions.RequestException, ValueError) as exc:
+            # A dropped connection, a response cut off part-way, a timeout or
+            # unreadable JSON. These are temporary, so wait and ask again. The
+            # same cursor is requested again, so no page is skipped or doubled.
+            log.warning("Network problem (%s), retry %d of %d in %ss",
+                        type(exc).__name__, attempt + 1, retries, wait)
+            time.sleep(wait)
+            continue
         if resp.status_code in (429, 500, 502, 503, 504):
-            wait = min(2 ** attempt, 60)
-            log.warning("OpenAlex %s, retrying in %ss", resp.status_code, wait)
+            log.warning("OpenAlex answered %s, retry %d of %d in %ss",
+                        resp.status_code, attempt + 1, retries, wait)
             time.sleep(wait)
             continue
         if resp.status_code in (401, 403, 409):
@@ -58,14 +70,20 @@ def _get(session: requests.Session, params: dict, retries: int = 6) -> dict:
         if resp.status_code == 400:
             raise FilterRejected(resp.text[:300])
         raise OpenAlexError(f"OpenAlex error {resp.status_code}: {resp.text[:300]}")
-    raise OpenAlexError("OpenAlex still failing after retries")
+    raise OpenAlexError(f"OpenAlex still failing after {retries} attempts")
 
 
 def iter_works(session: requests.Session, filt: str, per_page: int = 100) -> Iterator[dict]:
     cursor = "*"
+    page = 0
     while cursor:
         data = _get(session, {"filter": filt, "select": SELECT,
                               "per_page": per_page, "cursor": cursor})
+        page += 1
+        if page == 1:
+            log.info("%s works match this query", f"{data['meta'].get('count', 0):,}")
+        elif page % 20 == 0:
+            log.info("  ... page %d fetched", page)
         yield from data["results"]
         cursor = data["meta"].get("next_cursor")
 
