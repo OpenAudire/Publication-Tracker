@@ -31,11 +31,6 @@ jobs:
           OPENALEX_API_KEY: dummy-for-offline-test
         run: python -m tests.test_pipeline
 
-      - name: Offline self-test
-        env:
-          OPENALEX_API_KEY: dummy-for-offline-test
-        run: python -m tests.test_pipeline
-
       - name: Harvest, tag and build data files
         env:
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
