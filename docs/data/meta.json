@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-31T07:16:07+00:00",
+ "generated_at": "2026-10-31T12:34:16+00:00",
  "demo_data": false,
  "institution": "University of Cape Town",
  "short_name": "UCT",
@@ -7,10 +7,10 @@
  "from_year": 2006,
  "counts": {
   "date": "2026-10-31",
-  "in_scope": 38158,
-  "fhs": 38051,
-  "hpe": 466,
-  "review_candidates": 603,
+  "in_scope": 37988,
+  "fhs": 37975,
+  "hpe": 568,
+  "review_candidates": 39,
   "scopus": 0,
   "wos": 0,
   "harvested": 76127,
@@ -69,10 +69,10 @@
  "history": [
   {
    "date": "2026-10-31",
-   "in_scope": "38158",
-   "fhs": "38051",
-   "hpe": "466",
-   "review_candidates": "603",
+   "in_scope": "37988",
+   "fhs": "37975",
+   "hpe": "568",
+   "review_candidates": "39",
    "scopus": "0",
    "wos": "0"
   }
