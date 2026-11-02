@@ -32,7 +32,7 @@ def _setup(tmp: Path) -> tuple[dict, Path]:
         w.writerow(["10.1/w1", "Univ Cape Town, Dept Med, Cape Town, South Africa"])
     # Manual decision: reject W2 as HPE, accept the candidate W7.
     with (tmp / "data" / "overrides.csv").open("w", encoding="utf-8", newline="") as fh:
-        fh.write("doi,hpe\n10.1/w2,no\n10.1/w7,yes\n")
+        fh.write("doi,openalex_id,hpe\n10.1/w2,,no\n10.1/w7,,yes\n,W15,yes\n")
     mock = tmp / "mock.json"
     mock.write_text(json.dumps(make_mock.build(600)), encoding="utf-8")
     return config_mod.load(root=tmp), mock
@@ -83,6 +83,16 @@ def test_pipeline() -> None:
         w11 = by_doi["10.1/w11"]
         assert w11["h"] == 1 and "scopus" in w11["s"] and "openalex" in w11["s"]
 
+        # W12: HPE-sounding title with no health context => not counted at all
+        assert "10.1/w12" not in by_doi
+        # W13: supplementary-file record => excluded
+        assert "10.1/w13" not in by_doi
+        # W14: no FHS affiliation but "occupational therapy" in the title => HPE
+        assert by_doi["10.1/w14"]["h"] == 1 and by_doi["10.1/w14"]["hs"] == "title_keyword"
+
+        # W15: no DOI, accepted by OpenAlex id in overrides.csv => HPE
+        assert works["W15"]["h"] == 1 and works["W15"]["hs"] == "manual_yes"
+
         # Unresolvable external DOI is reported, and the non-UCT row never appears
         unresolved = (tmp / cfg["outputs"]["unresolved_csv"]).read_text()
         assert "10.1/zzz" in unresolved and "10.1/other" not in unresolved
@@ -120,6 +130,31 @@ def test_config_regexes() -> None:
     print("config regex test OK")
 
 
+def test_themes() -> None:
+    """Sub-themes: phrase-based, with broad words allowed only in the title."""
+    T = config_mod.load()["lens"]["_themes"]
+
+    def hit(theme: str, title: str, abstract: str = "") -> bool:
+        return T[theme].search(f"{title} {abstract}", title)
+
+    assert hit("Assessment and feedback", "Reflections on feedback practices")
+    assert hit("Examinations and psychometrics", "An OSCE standard-setting study")
+    assert hit("Workplace-based and competency-based assessment", "Entrustable professional activities for registrars")
+    # a passing word in an abstract must not tag a paper...
+    assert not hit("Assessment and feedback", "Cohort study",
+                   "We made an assessment of patients and gave feedback to the team.")
+    # ...and neither must look-alike words
+    assert not hit("Postgraduate training and CPD", "An international, multicentre study")   # "intern" in "international"
+    assert not hit("Examinations and psychometrics", "Examples of good practice")            # "exam" in "examples"
+    assert not hit("Teaching and learning methods", "Outcomes at Tamale Teaching Hospital")
+    # typographic hyphens are folded
+    assert hit("Social accountability and workforce", "Experiences of non\u2010practising health professionals")
+    # a theme can be matched by an abstract phrase even if the title has none
+    assert hit("Artificial intelligence in education", "A pilot study", "We used large language models to draft cases.")
+    print("theme test OK")
+
+
 if __name__ == "__main__":
     test_pipeline()
     test_config_regexes()
+    test_themes()
