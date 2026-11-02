@@ -1,20 +1,20 @@
 {
- "generated_at": "2026-10-31T12:34:16+00:00",
+ "generated_at": "2026-11-02T11:25:55+00:00",
  "demo_data": false,
  "institution": "University of Cape Town",
  "short_name": "UCT",
  "lens": "Health Professions Education",
  "from_year": 2006,
  "counts": {
-  "date": "2026-10-31",
-  "in_scope": 37988,
-  "fhs": 37975,
+  "date": "2026-11-02",
+  "in_scope": 38001,
+  "fhs": 37988,
   "hpe": 568,
-  "review_candidates": 39,
+  "review_candidates": 46,
   "scopus": 0,
   "wos": 0,
-  "harvested": 76127,
-  "dropped_no_institution_mention": 1439,
+  "harvested": 76129,
+  "dropped_no_institution_mention": 1444,
   "retracted_excluded": 18,
   "unresolved_external_dois": 0
  },
@@ -73,6 +73,15 @@
    "fhs": "37975",
    "hpe": "568",
    "review_candidates": "39",
+   "scopus": "0",
+   "wos": "0"
+  },
+  {
+   "date": "2026-11-02",
+   "in_scope": "38001",
+   "fhs": "37988",
+   "hpe": "568",
+   "review_candidates": "46",
    "scopus": "0",
    "wos": "0"
   }
