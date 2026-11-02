@@ -117,6 +117,20 @@ def edge_cases() -> list[dict]:
              doi="10.1/w10", domain="Social Sciences", cited=5),
         # W11: found only via a Scopus export (not in OpenAlex harvest)
         # lives in extra_by_doi, see below
+        # W12: HPE-sounding title but no health context (business school) -> must NOT count
+        work(12, "Decolonising management education: mechanisms for change", 2021, "Academy of Management Learning",
+             [authorship("first", UCT_INST, "Graduate School of Business, University of Cape Town")],
+             doi="10.1/w12", domain="Social Sciences"),
+        # W13: Figshare supplementary file of a paper -> not a publication, excluded
+        work(13, "Additional file 1 of The introduction of workplace-based assessment", 2023, "Figshare",
+             [authorship("first", UCT_INST, FHS_AFF[0])], doi="10.1/w13"),
+        # W14: no FHS affiliation, but a health word in the title -> still HPE
+        work(14, "Decolonising occupational therapy education in South Africa", 2022, "Journal of Occupational Science",
+             [authorship("first", UCT_INST, "Centre for Higher Education Development, University of Cape Town")],
+             doi="10.1/w14", domain="Social Sciences"),
+        # W15: no DOI at all (old PubMed-only record); accepted through its OpenAlex id
+        work(15, "Experiences of the intern year", 2008, "PubMed",
+             [authorship("first", UCT_INST, FHS_AFF[0])], doi=None, abstract=ABSTRACT_CANDIDATE),
     ]
 
 
