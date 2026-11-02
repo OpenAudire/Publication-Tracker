@@ -81,7 +81,7 @@ def tag_hpe(rec: dict, cfg: dict, overrides: dict[str, bool]) -> None:
     rec["hpe_status"] = status
     rec["hpe"] = status in ("core_journal", "title_keyword", "manual_yes")
     rec["themes"] = (
-        [name for name, rx in lens["_themes"].items() if rx.search(text)]
+        [name for name, theme in lens["_themes"].items() if theme.search(text, title)]
         if rec["hpe"] else []
     )
 
