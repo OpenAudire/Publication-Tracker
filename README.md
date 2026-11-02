@@ -75,6 +75,20 @@ A decision is remembered permanently and wins over every automatic rule.
 Change `institution` (name, ROR id, affiliation regex), the `fhs` block, and the `lens`
 block (journals, terms, themes). No code changes needed.
 
+## How the sub-themes work
+
+Each theme in `config.yaml` has two lists of patterns:
+
+- `terms`: specific phrases, looked for in the title **and** the abstract
+  (for example "workplace-based assessment", "feedback practices").
+- `title_terms`: broader words, looked for in the **title only** (for example "feedback",
+  "curriculum"). A broad word in a title is usually what the paper is about; the same word
+  in an abstract usually is not.
+
+A paper gets a theme when either list matches, and can have several themes. Themes are only
+given to papers already counted as HPE. To tighten a theme, make its phrases longer; to
+widen it, add a phrase. To check a change, run `python -m tests.test_pipeline`.
+
 ## Known limits to keep in mind
 
 - **OpenAlex coverage is imperfect.** Affiliations can be missing or split between a
