@@ -289,7 +289,7 @@ function render(){
   const A = columns("perYear", years, seriesA, {labels:all, aria:"Publications per year"});
 
   const J = ranked(countBy(r,w=>w.j).slice(0,10), {total:st.n, head:"Journal"});
-  const T = ranked(countBy(r.filter(w=>w.h),w=>w.th).slice(0,12), {total:st.hpe, head:"Theme"});
+  const T = ranked(countBy(r.filter(w=>w.h),w=>w.th).slice(0,30), {total:st.hpe, head:"Theme"});
   const C = ranked(countBy(r,w=>w.cn.filter(c=>c!=="ZA")).slice(0,10), {label:COUNTRY, total:st.n, head:"Country", unit:"Papers with a co-author"});
   const MIN_N = 5;   // a share from a handful of papers is noise, so those years are left out
   const oaVals = years.map(y=>{const b=byY(y); return b.length>=MIN_N? Math.round(b.filter(w=>w.o!=="closed").length/b.length*100):null;});
